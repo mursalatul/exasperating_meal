@@ -75,7 +75,26 @@ def update_profile(request):
     if request.method == 'POST':
         color = request.POST.get('color')
         emoji = request.POST.get('emoji')
+        old_pass = request.POST.get('old_password')
+        new_pass = request.POST.get('new_password')
+        confirm_pass = request.POST.get('confirm_password')
+        
         profile, _ = Profile.objects.get_or_create(user=request.user)
+        
+        # Password change logic
+        if old_pass or new_pass:
+            if not old_pass or not new_pass or not confirm_pass:
+                return JsonResponse({'success': False, 'error': 'All fields required! Don\'t be lazy. 🥱'}, status=400)
+            if not request.user.check_password(old_pass):
+                return JsonResponse({'success': False, 'error': 'Nice try, impostor! That\'s not your password. 🕵️‍♂️'}, status=400)
+            if new_pass != confirm_pass:
+                return JsonResponse({'success': False, 'error': 'Passwords don\'t match! Did you have too much sugar? 🍬'}, status=400)
+            
+            request.user.set_password(new_pass)
+            request.user.save()
+            from django.contrib.auth import update_session_auth_hash
+            update_session_auth_hash(request, request.user)
+
         if color:
             profile.color = color
         if emoji:

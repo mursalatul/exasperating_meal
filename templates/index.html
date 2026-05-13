@@ -585,7 +585,7 @@
     border-radius: 8px;
     opacity: 0;
     transition: all 0.3s;
-    z-index: 999;
+    z-index: 3000;
     pointer-events: none;
     white-space: nowrap;
   }
@@ -864,6 +864,20 @@
         <div class="color-circle" style="background: #06b6d4;" onclick="document.getElementById('input-color').value='#06b6d4'"></div>
       </div>
     </div>
+    <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
+    <h4 style="font-family:'Syne'; margin-bottom:15px; font-size:14px; text-transform:uppercase; color:var(--muted);">Change Password</h4>
+    <div class="settings-group">
+      <label>Old Password</label>
+      <input type="password" id="input-old-pass" placeholder="Enter current password">
+    </div>
+    <div class="settings-group">
+      <label>New Password</label>
+      <input type="password" id="input-new-pass" placeholder="Enter new password">
+    </div>
+    <div class="settings-group">
+      <label>Confirm New Password</label>
+      <input type="password" id="input-confirm-pass" placeholder="Confirm new password">
+    </div>
     <div style="display:flex; gap:12px; margin-top:32px;">
       <button class="btn-save-bazar" style="background:var(--border); color:var(--text); flex:1;" onclick="toggleSettings(false)">Cancel</button>
       <button class="btn-save-bazar" style="flex:1;" id="btn-save-profile" onclick="saveProfile()">Save Changes</button>
@@ -883,6 +897,9 @@
   window.saveProfile = function() {
     const color = document.getElementById('input-color').value;
     const emoji = document.getElementById('input-emoji').value;
+    const oldPass = document.getElementById('input-old-pass').value;
+    const newPass = document.getElementById('input-new-pass').value;
+    const confirmPass = document.getElementById('input-confirm-pass').value;
     const btn = document.getElementById('btn-save-profile');
     
     btn.disabled = true;
@@ -891,6 +908,9 @@
     const formData = new FormData();
     formData.append('color', color);
     formData.append('emoji', emoji);
+    formData.append('old_password', oldPass);
+    formData.append('new_password', newPass);
+    formData.append('confirm_password', confirmPass);
     formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
     fetch("{% url 'update_profile' %}", {
@@ -900,20 +920,21 @@
             'X-Requested-With': 'XMLHttpRequest',
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw new Error(err.error || 'Server error') });
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            toast('✨ Profile updated! Refreshing...');
+            toast('✨ Profile updated successfully!');
             setTimeout(() => location.reload(), 1000);
-        } else {
-            toast('Error updating profile');
-            btn.disabled = false;
-            btn.textContent = 'Save Changes';
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        toast('Connection error');
+        toast('❌ ' + error.message);
         btn.disabled = false;
         btn.textContent = 'Save Changes';
     });
