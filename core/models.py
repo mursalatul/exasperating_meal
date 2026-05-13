@@ -14,3 +14,10 @@ class MealRecord(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s Meal Record for {self.date}"
+
+class BazarList(models.Model):
+    content = models.TextField(blank=True, default="")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "Shared Bazar List"

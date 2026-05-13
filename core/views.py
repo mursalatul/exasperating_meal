@@ -4,7 +4,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.utils import timezone
-from .models import MealRecord
+from .models import MealRecord, BazarList
 import datetime
 
 def can_edit_lunch():
@@ -29,9 +29,11 @@ def index(request):
         MealRecord.objects.get_or_create(user=user, date=today)
         
     meal_records = MealRecord.objects.filter(date=today).select_related('user').order_by('user_id')
+    bazar_list, _ = BazarList.objects.get_or_create(id=1)
     
     context = {
         'meal_records': meal_records,
+        'bazar_list': bazar_list,
         'can_edit_lunch': can_edit_lunch(),
         'can_edit_dinner': can_edit_dinner(),
         'lunch_deadline': "5:00 AM",
@@ -89,3 +91,13 @@ def update_meal(request):
         return JsonResponse({'error': 'Invalid meal type'}, status=400)
     
     return JsonResponse({'success': True})
+
+@login_required
+def update_bazar(request):
+    if request.method == 'POST':
+        content = request.POST.get('content', '')
+        bazar_list, _ = BazarList.objects.get_or_create(id=1)
+        bazar_list.content = content
+        bazar_list.save()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
