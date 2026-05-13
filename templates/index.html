@@ -383,40 +383,6 @@
     transform: translateX(-50%) translateY(0);
   }
 
-  /* FOOTER STATS */
-  .footer-stats {
-    margin-top: 40px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 32px;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    gap: 20px;
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  }
-
-  .footer-stat-card {
-    flex: 1;
-  }
-
-  .footer-stat-val {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 48px;
-    line-height: 1;
-    margin-bottom: 8px;
-  }
-
-  .footer-stat-label {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--muted);
-  }
-
   .val-lunch { color: var(--lunch-color); text-shadow: 0 0 20px rgba(249, 115, 22, 0.2); }
   .val-breakfast { color: var(--dinner-color); text-shadow: 0 0 20px rgba(129, 140, 248, 0.2); }
 
@@ -473,20 +439,6 @@
 
     .board {
       grid-template-columns: 1fr;
-    }
-
-    .footer-stats {
-      padding: 24px 16px;
-      flex-direction: column;
-      gap: 24px;
-    }
-
-    .footer-stat-card:nth-child(2) {
-      display: none !important;
-    }
-
-    .footer-stat-val {
-      font-size: 36px;
     }
   }
 
@@ -618,18 +570,6 @@
     {% endfor %}
   </div>
 
-  <!-- Footer Stats -->
-  <div class="footer-stats">
-    <div class="footer-stat-card">
-        <div class="footer-stat-val val-lunch" id="footer-lunch">0</div>
-        <div class="footer-stat-label">Total Lunch</div>
-    </div>
-    <div class="footer-stat-card" style="width: 1px; height: 60px; background: var(--border); flex: none;"></div>
-    <div class="footer-stat-card">
-        <div class="footer-stat-val val-breakfast" id="footer-breakfast">0</div>
-        <div class="footer-stat-label">Total Breakfast</div>
-    </div>
-  </div>
 </div>
 
 <div id="toast"></div>
@@ -671,8 +611,6 @@
 
     document.getElementById('stat-lunch').textContent = lunchCount;
     document.getElementById('stat-dinner').textContent = dinnerCount;
-    document.getElementById('footer-lunch').textContent = lunchCount;
-    document.getElementById('footer-breakfast').textContent = dinnerCount;
   }
 
   window.setMeal = function(mealType, value, btn) {
