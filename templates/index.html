@@ -658,13 +658,13 @@
       <span>NOW</span>
       <span class="val" id="live-clock">--:--:--</span>
     </div>
-    <div class="time-pill {% if can_edit_lunch %}open{% else %}closed{% endif %}" id="lunch-status-pill">
-      <span>🍱 LUNCH EDIT</span>
-      <span class="val" id="lunch-status-val">{% if can_edit_lunch %}OPEN{% else %}CLOSED{% endif %}</span>
+    <div class="time-pill open" id="lunch-status-pill">
+      <span>🍱 LUNCH FOR</span>
+      <span class="val" id="lunch-status-val">{% if is_lunch_tomorrow %}TOMORROW{% else %}TODAY{% endif %}</span>
     </div>
-    <div class="time-pill {% if can_edit_dinner %}open{% else %}closed{% endif %}" id="dinner-status-pill">
-      <span>🌙 DINNER EDIT</span>
-      <span class="val" id="dinner-status-val">{% if can_edit_dinner %}OPEN{% else %}CLOSED{% endif %}</span>
+    <div class="time-pill open" id="dinner-status-pill">
+      <span>🌙 DINNER FOR</span>
+      <span class="val" id="dinner-status-val">{% if is_dinner_tomorrow %}TOMORROW{% else %}TODAY{% endif %}</span>
     </div>
   </div>
 
@@ -679,11 +679,11 @@
       <div class="stat-desc">Dinner Count</div>
     </div>
     <div style="margin-left:auto; display:flex; gap:8px; flex-wrap:wrap;">
-      <span class="deadline-notice {% if can_edit_lunch %}open{% else %}closed{% endif %}" id="lunch-notice">
-        {% if can_edit_lunch %}🍱 Lunch locks at {{ lunch_deadline }}{% else %}🍱 Lunch editing closed{% endif %}
+      <span class="deadline-notice open" id="lunch-notice">
+        🍱 Lunch for {{ lunch_date|date:"M d" }}
       </span>
-      <span class="deadline-notice {% if can_edit_dinner %}open{% else %}closed{% endif %}" id="dinner-notice">
-        {% if can_edit_dinner %}🌙 Dinner locks at {{ dinner_deadline }}{% else %}🌙 Dinner editing closed{% endif %}
+      <span class="deadline-notice open" id="dinner-notice">
+        🌙 Dinner for {{ dinner_date|date:"M d" }}
       </span>
     </div>
   </div>
@@ -704,21 +704,17 @@
         <div class="meal-row">
             <div class="meal-info">
                 <div class="meal-dot lunch"></div>
-                <span class="meal-label">🍱 Lunch</span>
+                <span class="meal-label">🍱 Lunch {% if is_lunch_tomorrow %}(Tomw){% else %}(Today){% endif %}</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
                 <span class="meal-status {% if mr.lunch == True %}yes{% elif mr.lunch == False %}no{% else %}unset{% endif %}" id="status-lunch-{{ mr.user.username }}">
                     {% if mr.lunch == True %}YES{% elif mr.lunch == False %}NO{% else %}—{% endif %}
                 </span>
                 {% if request.user == mr.user %}
-                    {% if can_edit_lunch %}
                     <div class="meal-controls">
                         <button class="toggle-btn {% if mr.lunch == True %}active-yes{% endif %}" onclick="setMeal('lunch', true, this)">Yes</button>
                         <button class="toggle-btn {% if mr.lunch == False %}active-no{% endif %}" onclick="setMeal('lunch', false, this)">No</button>
                     </div>
-                    {% else %}
-                    <span class="lock-icon" title="Locked at {{ lunch_deadline }}">🔒</span>
-                    {% endif %}
                 {% endif %}
             </div>
         </div>
@@ -727,21 +723,17 @@
         <div class="meal-row">
             <div class="meal-info">
                 <div class="meal-dot dinner"></div>
-                <span class="meal-label">🌙 Dinner</span>
+                <span class="meal-label">🌙 Dinner {% if is_dinner_tomorrow %}(Tomw){% else %}(Today){% endif %}</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
                 <span class="meal-status {% if mr.dinner == True %}yes{% elif mr.dinner == False %}no{% else %}unset{% endif %}" id="status-dinner-{{ mr.user.username }}">
                     {% if mr.dinner == True %}YES{% elif mr.dinner == False %}NO{% else %}—{% endif %}
                 </span>
                 {% if request.user == mr.user %}
-                    {% if can_edit_dinner %}
                     <div class="meal-controls">
                         <button class="toggle-btn {% if mr.dinner == True %}active-yes{% endif %}" onclick="setMeal('dinner', true, this)">Yes</button>
                         <button class="toggle-btn {% if mr.dinner == False %}active-no{% endif %}" onclick="setMeal('dinner', false, this)">No</button>
                     </div>
-                    {% else %}
-                    <span class="lock-icon" title="Locked at {{ dinner_deadline }}">🔒</span>
-                    {% endif %}
                 {% endif %}
             </div>
         </div>

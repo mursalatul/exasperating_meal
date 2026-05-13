@@ -7,44 +7,59 @@ from django.utils import timezone
 from .models import MealRecord, BazarList
 import datetime
 
-def can_edit_lunch():
+def get_target_dates():
     now = timezone.localtime(timezone.now())
-    # Deadline: 5:00 AM (30 min before 5:30 AM)
-    deadline = now.replace(hour=5, minute=0, second=0, microsecond=0)
-    return now < deadline
-
-def can_edit_dinner():
-    now = timezone.localtime(timezone.now())
-    # Deadline: 4:00 PM (16:00)
-    deadline = now.replace(hour=16, minute=0, second=0, microsecond=0)
-    return now < deadline
+    # Lunch switches to tomorrow at 6:00 AM
+    lunch_date = now.date()
+    if now.hour >= 6:
+        lunch_date += datetime.timedelta(days=1)
+    
+    # Dinner switches to tomorrow at 6:00 PM (18:00)
+    dinner_date = now.date()
+    if now.hour >= 18:
+        dinner_date += datetime.timedelta(days=1)
+        
+    return lunch_date, dinner_date
 
 @login_required
 def index(request):
-    today = timezone.localtime(timezone.now()).date()
+    now = timezone.localtime(timezone.now())
+    lunch_date, dinner_date = get_target_dates()
+    
     users = User.objects.all().order_by('id')
     
-    # Ensure every user has a record for today, carrying forward previous choices
+    # Ensure records exist for relevant dates and carry forward if needed
     for user in users:
-        record, created = MealRecord.objects.get_or_create(user=user, date=today)
-        if created:
-            # Look for the most recent record before today
-            prev_record = MealRecord.objects.filter(user=user, date__lt=today).order_by('-date').first()
-            if prev_record:
-                record.lunch = prev_record.lunch
-                record.dinner = prev_record.dinner
-                record.save()
+        # Check today, tomorrow, and potentially the day after if dinner_date is tomorrow
+        for d in [now.date(), now.date() + datetime.timedelta(days=1)]:
+            record, created = MealRecord.objects.get_or_create(user=user, date=d)
+            if created:
+                prev_record = MealRecord.objects.filter(user=user, date__lt=d).order_by('-date').first()
+                if prev_record:
+                    record.lunch = prev_record.lunch
+                    record.dinner = prev_record.dinner
+                    record.save()
+
+    # We need to construct a display list where each row has the CORRECT date's meal
+    display_records = []
+    for user in users:
+        l_rec = MealRecord.objects.get(user=user, date=lunch_date)
+        d_rec = MealRecord.objects.get(user=user, date=dinner_date)
+        display_records.append({
+            'user': user,
+            'lunch': l_rec.lunch,
+            'dinner': d_rec.dinner,
+        })
         
-    meal_records = MealRecord.objects.filter(date=today).select_related('user').order_by('user_id')
     bazar_list, _ = BazarList.objects.get_or_create(id=1)
     
     context = {
-        'meal_records': meal_records,
+        'meal_records': display_records,
         'bazar_list': bazar_list,
-        'can_edit_lunch': can_edit_lunch(),
-        'can_edit_dinner': can_edit_dinner(),
-        'lunch_deadline': "5:00 AM",
-        'dinner_deadline': "4:00 PM",
+        'lunch_date': lunch_date,
+        'dinner_date': dinner_date,
+        'is_lunch_tomorrow': lunch_date > now.date(),
+        'is_dinner_tomorrow': dinner_date > now.date(),
     }
     return render(request, 'index.html', context)
 
@@ -80,18 +95,17 @@ def update_meal(request):
     
     meal_type = request.POST.get('meal_type') # 'lunch' or 'dinner'
     value = request.POST.get('value') == 'true'
-    today = timezone.localtime(timezone.now()).date()
+    
+    lunch_date, dinner_date = get_target_dates()
     
     if meal_type == 'lunch':
-        if not can_edit_lunch():
-            return JsonResponse({'error': 'Lunch editing is closed'}, status=400)
-        record, _ = MealRecord.objects.get_or_create(user=request.user, date=today)
+        record, _ = MealRecord.objects.get_or_create(user=request.user, date=lunch_date)
         record.lunch = value
         record.save()
+        # To keep "Carry Forward" working for future days, we could update the latest record
+        # But for now, just following the user's date logic
     elif meal_type == 'dinner':
-        if not can_edit_dinner():
-            return JsonResponse({'error': 'Dinner editing is closed'}, status=400)
-        record, _ = MealRecord.objects.get_or_create(user=request.user, date=today)
+        record, _ = MealRecord.objects.get_or_create(user=request.user, date=dinner_date)
         record.dinner = value
         record.save()
     else:
