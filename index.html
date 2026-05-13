@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meal Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e10;
+    --surface: #18181c;
+    --card: #1f1f26;
+    --border: #2e2e3a;
+    --accent: #f0c040;
+    --accent2: #5de6b0;
+    --danger: #ff5f5f;
+    --text: #e8e8f0;
+    --muted: #6e6e88;
+    --lunch-color: #f97316;
+    --dinner-color: #818cf8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(240,192,64,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240,192,64,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .logo-tag {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 4px 12px;
+    border-radius: 2px;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* TIME DISPLAY */
+  .time-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin: 28px 0;
+    flex-wrap: wrap;
+  }
+
+  .time-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .time-pill .val {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .time-pill.open .val { color: var(--accent2); }
+  .time-pill.closed .val { color: var(--danger); }
+
+  #live-clock {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--accent);
+  }
+
+  /* USER SELECTOR */
+  .user-select-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 36px;
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .user-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .user-chip {
+    cursor: pointer;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    transition: all 0.18s ease;
+    user-select: none;
+  }
+
+  .user-chip:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .user-chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0e0e10;
+  }
+
+  /* MEAL BOARD GRID */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  /* USER CARD */
+  .user-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    transition: border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .user-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    transition: background 0.2s;
+  }
+
+  .user-card.is-me {
+    border-color: var(--accent);
+  }
+
+  .user-card.is-me::before {
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  .card-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .card-username {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+  }
+
+  .you-tag {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(240,192,64,0.1);
+    border: 1px solid rgba(240,192,64,0.3);
+    padding: 2px 7px;
+    border-radius: 3px;
+    margin-left: 6px;
+  }
+
+  /* MEAL ROWS */
+  .meal-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .meal-info {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .meal-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .meal-dot.lunch { background: var(--lunch-color); box-shadow: 0 0 6px var(--lunch-color); }
+  .meal-dot.dinner { background: var(--dinner-color); box-shadow: 0 0 6px var(--dinner-color); }
+
+  .meal-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .meal-status {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .meal-status.yes { color: var(--accent2); }
+  .meal-status.no { color: var(--danger); }
+  .meal-status.unset { color: var(--muted); }
+
+  /* TOGGLE BUTTONS (own card only) */
+  .meal-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .toggle-btn {
+    cursor: pointer;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .toggle-btn:hover:not(:disabled) { border-color: var(--accent2); color: var(--accent2); }
+  .toggle-btn.active-yes { border-color: var(--accent2); color: var(--accent2); background: rgba(93,230,176,0.08); }
+  .toggle-btn.active-no { border-color: var(--danger); color: var(--danger); background: rgba(255,95,95,0.08); }
+
+  .toggle-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .lock-icon {
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 24px;
+    margin-bottom: 28px;
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+  }
+
+  .stat-num.lunch-col { color: var(--lunch-color); }
+  .stat-num.dinner-col { color: var(--dinner-color); }
+
+  .stat-desc {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* deadline banners */
+  .deadline-notice {
+    font-size: 11px;
+    padding: 6px 14px;
+    border-radius: 5px;
+    letter-spacing: 0.5px;
+  }
+
+  .deadline-notice.open {
+    background: rgba(93,230,176,0.1);
+    border: 1px solid rgba(93,230,176,0.3);
+    color: var(--accent2);
+  }
+
+  .deadline-notice.closed {
+    background: rgba(255,95,95,0.1);
+    border: 1px solid rgba(255,95,95,0.3);
+    color: var(--danger);
+  }
+
+  /* toast */
+  #toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 13px;
+    padding: 10px 22px;
+    border-radius: 8px;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 600px) {
+    .stats-bar { gap: 18px; }
+    .board { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 400px) {
+    .board { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo-tag">Meal Board</div>
+    <h1>Who's <span>Eating</span> Today?</h1>
+    <p class="subtitle">Tap your name · Set lunch & dinner · Everyone sees it live</p>
+  </header>
+
+  <div class="time-bar">
+    <div class="time-pill">
+      <span>NOW</span>
+      <span class="val" id="live-clock">--:--:--</span>
+    </div>
+    <div class="time-pill" id="lunch-status-pill">
+      <span>🍱 LUNCH EDIT</span>
+      <span class="val" id="lunch-status-val">—</span>
+    </div>
+    <div class="time-pill" id="dinner-status-pill">
+      <span>🌙 DINNER EDIT</span>
+      <span class="val" id="dinner-status-val">—</span>
+    </div>
+  </div>
+
+  <!-- User selector -->
+  <div class="user-select-section">
+    <div class="section-label">Who are you?</div>
+    <div class="user-chips" id="user-chips"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-num lunch-col" id="stat-lunch">0</div>
+      <div class="stat-desc">Lunch Count</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num dinner-col" id="stat-dinner">0</div>
+      <div class="stat-desc">Dinner Count</div>
+    </div>
+    <div style="margin-left:auto; display:flex; gap:8px; flex-wrap:wrap;">
+      <span class="deadline-notice" id="lunch-notice"></span>
+      <span class="deadline-notice" id="dinner-notice"></span>
+    </div>
+  </div>
+
+  <!-- Board -->
+  <div class="board" id="board"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const USERS = ['Pallob', 'Naim', 'Swadhin', 'Yousuf', 'Zonain', 'Adil', 'Labib'];
+
+  // Deadlines: lunch editable before 5:30 AM, dinner editable before 4:00 PM
+  const LUNCH_DEADLINE = { h: 5, m: 30 };
+  const DINNER_DEADLINE = { h: 16, m: 0 };
+
+  // Storage key
+  const STORE_KEY = 'mealboard_v1';
+
+  // State
+  let currentUser = null;
+  let meals = loadMeals();
+
+  function loadMeals() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    const m = {};
+    USERS.forEach(u => { m[u] = { lunch: null, dinner: null }; });
+    return m;
+  }
+
+  function saveMeals() {
+    localStorage.setItem(STORE_KEY, JSON.stringify(meals));
+  }
+
+  function getNow() {
+    return new Date();
+  }
+
+  function canEditLunch() {
+    const now = getNow();
+    const deadline = new Date(now);
+    deadline.setHours(LUNCH_DEADLINE.h, LUNCH_DEADLINE.m, 0, 0);
+    return now < deadline;
+  }
+
+  function canEditDinner() {
+    const now = getNow();
+    const deadline = new Date(now);
+    deadline.setHours(DINNER_DEADLINE.h, DINNER_DEADLINE.m, 0, 0);
+    return now < deadline;
+  }
+
+  function pad(n) { return String(n).padStart(2,'0'); }
+
+  function timeStr(h, m) {
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    const hh = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+    return `${hh}:${pad(m)} ${suffix}`;
+  }
+
+  // Clock
+  function updateClock() {
+    const now = getNow();
+    document.getElementById('live-clock').textContent =
+      `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+    const lunchOpen = canEditLunch();
+    const dinnerOpen = canEditDinner();
+
+    const lp = document.getElementById('lunch-status-pill');
+    const lv = document.getElementById('lunch-status-val');
+    lp.className = 'time-pill ' + (lunchOpen ? 'open' : 'closed');
+    lv.textContent = lunchOpen ? 'OPEN' : 'CLOSED';
+
+    const dp = document.getElementById('dinner-status-pill');
+    const dv = document.getElementById('dinner-status-val');
+    dp.className = 'time-pill ' + (dinnerOpen ? 'open' : 'closed');
+    dv.textContent = dinnerOpen ? 'OPEN' : 'CLOSED';
+
+    const ln = document.getElementById('lunch-notice');
+    const dn = document.getElementById('dinner-notice');
+
+    if (lunchOpen) {
+      ln.className = 'deadline-notice open';
+      ln.textContent = `🍱 Lunch locks at ${timeStr(LUNCH_DEADLINE.h, LUNCH_DEADLINE.m)}`;
+    } else {
+      ln.className = 'deadline-notice closed';
+      ln.textContent = `🍱 Lunch editing closed`;
+    }
+
+    if (dinnerOpen) {
+      dn.className = 'deadline-notice open';
+      dn.textContent = `🌙 Dinner locks at ${timeStr(DINNER_DEADLINE.h, DINNER_DEADLINE.m)}`;
+    } else {
+      dn.className = 'deadline-notice closed';
+      dn.textContent = `🌙 Dinner editing closed`;
+    }
+  }
+
+  // Toast
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // Render user chips
+  function renderChips() {
+    const container = document.getElementById('user-chips');
+    container.innerHTML = '';
+    USERS.forEach(u => {
+      const chip = document.createElement('div');
+      chip.className = 'user-chip' + (currentUser === u ? ' active' : '');
+      chip.textContent = u;
+      chip.onclick = () => {
+        currentUser = u;
+        renderChips();
+        renderBoard();
+      };
+      container.appendChild(chip);
+    });
+  }
+
+  // Render board
+  function renderBoard() {
+    const container = document.getElementById('board');
+    container.innerHTML = '';
+
+    let lunchCount = 0, dinnerCount = 0;
+
+    USERS.forEach(u => {
+      const data = meals[u];
+      const isMe = u === currentUser;
+
+      if (data.lunch === true) lunchCount++;
+      if (data.dinner === true) dinnerCount++;
+
+      const card = document.createElement('div');
+      card.className = 'user-card' + (isMe ? ' is-me' : '');
+
+      const initials = u.slice(0,2).toUpperCase();
+
+      card.innerHTML = `
+        <div class="card-user">
+          <div class="avatar">${initials}</div>
+          <div>
+            <span class="card-username">${u}</span>
+            ${isMe ? '<span class="you-tag">You</span>' : ''}
+          </div>
+        </div>
+        ${mealRowHTML(u, 'lunch', isMe)}
+        ${mealRowHTML(u, 'dinner', isMe)}
+      `;
+
+      container.appendChild(card);
+    });
+
+    document.getElementById('stat-lunch').textContent = lunchCount;
+    document.getElementById('stat-dinner').textContent = dinnerCount;
+  }
+
+  function mealRowHTML(user, meal, isMe) {
+    const val = meals[user][meal];
+    const canEdit = meal === 'lunch' ? canEditLunch() : canEditDinner();
+    const deadlineLabel = meal === 'lunch'
+      ? `Locked at ${timeStr(LUNCH_DEADLINE.h, LUNCH_DEADLINE.m)}`
+      : `Locked at ${timeStr(DINNER_DEADLINE.h, DINNER_DEADLINE.m)}`;
+
+    let statusClass = 'unset';
+    let statusText = '—';
+    if (val === true) { statusClass = 'yes'; statusText = 'YES'; }
+    if (val === false) { statusClass = 'no'; statusText = 'NO'; }
+
+    const dotClass = meal;
+    const labelText = meal === 'lunch' ? '🍱 Lunch' : '🌙 Dinner';
+
+    let controls = '';
+    if (isMe) {
+      if (canEdit) {
+        controls = `
+          <div class="meal-controls">
+            <button class="toggle-btn ${val === true ? 'active-yes' : ''}"
+              onclick="setMeal('${user}','${meal}',true)">Yes</button>
+            <button class="toggle-btn ${val === false ? 'active-no' : ''}"
+              onclick="setMeal('${user}','${meal}',false)">No</button>
+          </div>`;
+      } else {
+        controls = `<span class="lock-icon" title="${deadlineLabel}">🔒</span>`;
+      }
+    }
+
+    return `
+      <div class="meal-row">
+        <div class="meal-info">
+          <div class="meal-dot ${dotClass}"></div>
+          <span class="meal-label">${labelText}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="meal-status ${statusClass}">${statusText}</span>
+          ${controls}
+        </div>
+      </div>`;
+  }
+
+  window.setMeal = function(user, meal, value) {
+    if (user !== currentUser) return;
+    const canEdit = meal === 'lunch' ? canEditLunch() : canEditDinner();
+    if (!canEdit) {
+      toast(`${meal === 'lunch' ? 'Lunch' : 'Dinner'} editing is now closed 🔒`);
+      return;
+    }
+    meals[user][meal] = value;
+    saveMeals();
+    renderBoard();
+    toast(`${meal === 'lunch' ? '🍱 Lunch' : '🌙 Dinner'} set to ${value ? 'YES' : 'NO'}`);
+  };
+
+  // Init
+  renderChips();
+  renderBoard();
+  updateClock();
+  setInterval(updateClock, 1000);
+  // Re-render every 30s to update lock states
+  setInterval(() => renderBoard(), 30000);
+</script>
+</body>
+</html>
