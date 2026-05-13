@@ -4,7 +4,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.utils import timezone
-from .models import MealRecord, BazarList
+from .models import MealRecord, BazarList, Profile
 import datetime
 
 def get_target_dates():
@@ -26,11 +26,13 @@ def index(request):
     now = timezone.localtime(timezone.now())
     lunch_date, dinner_date = get_target_dates()
     
+    # Ensure every user has a profile and records for relevant dates
     users = User.objects.all().order_by('id')
-    
-    # Ensure records exist for relevant dates and carry forward if needed
     for user in users:
-        # Check today, tomorrow, and potentially the day after if dinner_date is tomorrow
+        # 1. Profile check
+        Profile.objects.get_or_create(user=user, defaults={'emoji': user.username[:2].upper()})
+        
+        # 2. Meal records check (today/tomorrow)
         for d in [now.date(), now.date() + datetime.timedelta(days=1)]:
             record, created = MealRecord.objects.get_or_create(user=user, date=d)
             if created:
@@ -40,13 +42,15 @@ def index(request):
                     record.dinner = prev_record.dinner
                     record.save()
 
-    # We need to construct a display list where each row has the CORRECT date's meal
+    # Refetch with select_related now that profiles exist
+    users = User.objects.all().order_by('id').select_related('profile')
     display_records = []
     for user in users:
         l_rec = MealRecord.objects.get(user=user, date=lunch_date)
         d_rec = MealRecord.objects.get(user=user, date=dinner_date)
         display_records.append({
             'user': user,
+            'profile': user.profile,
             'lunch': l_rec.lunch,
             'dinner': d_rec.dinner,
         })
@@ -60,8 +64,25 @@ def index(request):
         'dinner_date': dinner_date,
         'is_lunch_tomorrow': lunch_date > now.date(),
         'is_dinner_tomorrow': dinner_date > now.date(),
+        'user_profile': request.user.profile,
     }
     return render(request, 'index.html', context)
+
+# ... (login/logout views)
+
+@login_required
+def update_profile(request):
+    if request.method == 'POST':
+        color = request.POST.get('color')
+        emoji = request.POST.get('emoji')
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        if color:
+            profile.color = color
+        if emoji:
+            profile.emoji = emoji
+        profile.save()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
 
 def login_view(request):
     if request.user.is_authenticated:

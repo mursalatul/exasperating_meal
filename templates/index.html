@@ -289,6 +289,80 @@
     color: var(--accent);
   }
 
+  /* SETTINGS MODAL */
+  #settings-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .settings-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 400px;
+    padding: 32px;
+    position: relative;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+  }
+
+  .settings-card h3 {
+    font-family: 'Syne', sans-serif;
+    margin-bottom: 24px;
+    font-size: 24px;
+  }
+
+  .settings-group {
+    margin-bottom: 20px;
+  }
+
+  .settings-group label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .settings-group input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    outline: none;
+  }
+
+  .color-picker-container {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  .color-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .color-circle.active {
+    border-color: #fff;
+    transform: scale(1.1);
+  }
+
   /* STATS BAR */
   .stats-bar {
     background: var(--surface);
@@ -391,16 +465,16 @@
     width: 38px;
     height: 38px;
     border-radius: 8px;
-    background: var(--surface);
+    background: #000;
     border: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Syne', sans-serif;
     font-weight: 800;
-    font-size: 15px;
-    color: var(--accent);
+    font-size: 16px;
     flex-shrink: 0;
+    transition: all 0.2s;
   }
 
   .card-username {
@@ -639,7 +713,9 @@
       <a href="#bazar-section">Needs Bazar</a>
     </div>
     <div class="nav-user">
-      <span style="font-size: 11px; color: var(--muted);">{{ request.user.username }}</span>
+      <button onclick="toggleSettings(true)" style="background:none; border:none; color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:6px; font-family:'Syne', sans-serif; font-weight:700; font-size:13px; text-transform:uppercase;">
+        <span>{{ user_profile.emoji }} Profile</span>
+      </button>
       <a href="{% url 'logout' %}" class="logout-btn" style="position: static;">Logout</a>
     </div>
   </div>
@@ -691,12 +767,12 @@
   <!-- Board -->
   <div class="board" id="board">
     {% for mr in meal_records %}
-    <div class="user-card {% if request.user == mr.user %}is-me{% endif %}">
+    <div class="user-card {% if request.user == mr.user %}is-me{% endif %}" {% if request.user == mr.user %}style="border-color: {{ mr.profile.color }};"{% endif %}>
         <div class="card-user">
-            <div class="avatar">{{ mr.user.username|slice:":2"|upper }}</div>
+            <div class="avatar" style="color: {{ mr.profile.color }}; border-color: {{ mr.profile.color }}44;">{{ mr.profile.emoji }}</div>
             <div>
                 <span class="card-username">{{ mr.user.username }}</span>
-                {% if request.user == mr.user %}<span class="you-tag">You</span>{% endif %}
+                {% if request.user == mr.user %}<span class="you-tag" style="border-color: {{ mr.profile.color }}55; color: {{ mr.profile.color }}; background: {{ mr.profile.color }}11;">You</span>{% endif %}
             </div>
         </div>
         
@@ -763,9 +839,86 @@
 
 </div>
 
+<!-- Settings Modal -->
+<div id="settings-modal">
+  <div class="settings-card">
+    <h3>Profile Settings</h3>
+    <div class="settings-group">
+      <label>Your Name</label>
+      <input type="text" value="{{ request.user.username }}" disabled style="opacity: 0.5;">
+    </div>
+    <div class="settings-group">
+      <label>Profile Emoji</label>
+      <input type="text" id="input-emoji" value="{{ user_profile.emoji }}" maxlength="2">
+    </div>
+    <div class="settings-group">
+      <label>Profile Color</label>
+      <input type="color" id="input-color" value="{{ user_profile.color }}" style="height: 50px; padding: 5px; cursor: pointer;">
+      <div class="color-picker-container">
+        <div class="color-circle" style="background: #f0c040;" onclick="document.getElementById('input-color').value='#f0c040'"></div>
+        <div class="color-circle" style="background: #5de6b0;" onclick="document.getElementById('input-color').value='#5de6b0'"></div>
+        <div class="color-circle" style="background: #ff5f5f;" onclick="document.getElementById('input-color').value='#ff5f5f'"></div>
+        <div class="color-circle" style="background: #818cf8;" onclick="document.getElementById('input-color').value='#818cf8'"></div>
+        <div class="color-circle" style="background: #f97316;" onclick="document.getElementById('input-color').value='#f97316'"></div>
+        <div class="color-circle" style="background: #ec4899;" onclick="document.getElementById('input-color').value='#ec4899'"></div>
+        <div class="color-circle" style="background: #06b6d4;" onclick="document.getElementById('input-color').value='#06b6d4'"></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px; margin-top:32px;">
+      <button class="btn-save-bazar" style="background:var(--border); color:var(--text); flex:1;" onclick="toggleSettings(false)">Cancel</button>
+      <button class="btn-save-bazar" style="flex:1;" id="btn-save-profile" onclick="saveProfile()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
+  // Profile Settings
+  window.toggleSettings = function(show) {
+    const modal = document.getElementById('settings-modal');
+    modal.style.display = show ? 'flex' : 'none';
+  };
+
+  window.saveProfile = function() {
+    const color = document.getElementById('input-color').value;
+    const emoji = document.getElementById('input-emoji').value;
+    const btn = document.getElementById('btn-save-profile');
+    
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    
+    const formData = new FormData();
+    formData.append('color', color);
+    formData.append('emoji', emoji);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch("{% url 'update_profile' %}", {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            toast('✨ Profile updated! Refreshing...');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            toast('Error updating profile');
+            btn.disabled = false;
+            btn.textContent = 'Save Changes';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toast('Connection error');
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+    });
+  };
+
   function pad(n) { return String(n).padStart(2,'0'); }
 
   // Clock
