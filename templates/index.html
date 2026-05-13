@@ -420,14 +420,94 @@
   .val-lunch { color: var(--lunch-color); text-shadow: 0 0 20px rgba(249, 115, 22, 0.2); }
   .val-breakfast { color: var(--dinner-color); text-shadow: 0 0 20px rgba(129, 140, 248, 0.2); }
 
-  @media (max-width: 600px) {
-    .stats-bar { gap: 18px; }
-    .board { grid-template-columns: 1fr 1fr; }
-    .footer-stats { flex-direction: column; gap: 32px; }
+  @media (max-width: 768px) {
+    .container {
+      padding: 20px 16px 40px;
+    }
+
+    header {
+      margin-bottom: 24px;
+    }
+
+    .logout-btn {
+      position: static;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 8vw, 2.5rem);
+    }
+
+    .time-bar {
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .time-pill {
+      flex: 1 1 120px;
+      justify-content: center;
+      padding: 6px 12px;
+    }
+
+    .stats-bar {
+      padding: 16px;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .stat-item {
+      align-items: center;
+    }
+
+    .stats-bar > div:last-child {
+      margin-left: 0 !important;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .deadline-notice {
+      width: 100%;
+      text-align: center;
+    }
+
+    .board {
+      grid-template-columns: 1fr;
+    }
+
+    .footer-stats {
+      padding: 24px 16px;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .footer-stat-card:nth-child(2) {
+      display: none !important;
+    }
+
+    .footer-stat-val {
+      font-size: 36px;
+    }
   }
 
-  @media (max-width: 400px) {
-    .board { grid-template-columns: 1fr; }
+  @media (min-width: 600px) and (max-width: 900px) {
+    .board {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* Improved touch targets for mobile */
+  .toggle-btn {
+    min-height: 32px;
+    padding: 6px 14px;
+  }
+
+  .user-card {
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .user-card:active {
+    transform: scale(0.98);
   }
 </style>
 </head>
