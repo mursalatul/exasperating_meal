@@ -24,9 +24,16 @@ def index(request):
     today = timezone.localtime(timezone.now()).date()
     users = User.objects.all().order_by('id')
     
-    # Ensure every user has a record for today
+    # Ensure every user has a record for today, carrying forward previous choices
     for user in users:
-        MealRecord.objects.get_or_create(user=user, date=today)
+        record, created = MealRecord.objects.get_or_create(user=user, date=today)
+        if created:
+            # Look for the most recent record before today
+            prev_record = MealRecord.objects.filter(user=user, date__lt=today).order_by('-date').first()
+            if prev_record:
+                record.lunch = prev_record.lunch
+                record.dinner = prev_record.dinner
+                record.save()
         
     meal_records = MealRecord.objects.filter(date=today).select_related('user').order_by('user_id')
     bazar_list, _ = BazarList.objects.get_or_create(id=1)
